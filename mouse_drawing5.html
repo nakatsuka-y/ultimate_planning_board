@@ -1,0 +1,238 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>Draw Lines</title>
+	<script type="text/javascript">
+	//成功バージョン！！
+	// this version is for drawing lines while using the "setInterval" function.
+	// this version is also for experimenting all sorts of ways of "drawing" lines.
+	// this version have succeeded to draw remembered lines.
+	// this version have also succeeded to draw remembered lines in their color and width, and also succeeded to draw seperated lines all in once.
+	// this version have also succeeded to undo and redo drawing lines.
+
+	//global variables
+	var color = new Array;
+	var width = new Array;
+	var graphx = new Array;
+	var graphy = new Array;
+	var draw_count = new Array;
+	var buff = new Array;
+
+	var draw_line = false;
+	var drawOK = false;
+	var context = null;
+	var canvas = null;
+	var drawID = -1;
+	var i=0;
+	var color_count = 0;
+	var width_count = 0;
+	var c_and_w_count = 0;
+	var count_count = 0;
+	var undo_count = 0;
+	
+	color[0] = "#000";
+	width[0] = 5;
+	draw_count[0] = 0;
+
+	function drawLine(x1,y1,x2,y2){
+		/*context.lineWidth = 5;
+		context.strokeStyle = "red";
+		context.lineCap = "round";*/
+		context.moveTo(x1,y1);
+		//context.beginPath();
+		context.lineTo(x2,y2);
+		context.stroke();
+	}
+	/*function draw(){
+		if(draw_line === false){
+			context.clearRect(0,0,600,200);
+			console.log("cleared");
+		}
+	}*/
+	function test(){
+		canvas = document.getElementById('sample');
+		//draw_line = document.forms[0].elements[0].checked;
+		var x1=y1=x2=y2=0;
+		//drawID = setInterval(draw,10);
+		if (canvas.getContext){
+			context = canvas.getContext("2d");
+			console.log(draw_line);
+			/*function init(){
+				canvas = document.getElementById('sample');
+				context = canvas.getContext("2d");
+				return setInterval(draw,100);
+			}*/
+			
+			//drawID = setInterval(draw,100);
+			function startPoint(event){
+				//listen for the mouse to be moved
+				if(draw_line === true){
+					var rect=event.target.getBoundingClientRect();
+					x1=event.clientX - rect.left;
+					y1=event.clientY - rect.top;
+					
+					//c_and_w_count++;
+					var color_name = document.getElementById("color_select");
+					var width_name = document.getElementById("width_select");
+					color[c_and_w_count] = color_name.value;
+					width[c_and_w_count] = width_name.value;
+					c_and_w_count++;
+
+					//move starting point to the current mouse cursole
+					//context.moveTo(x1,y1);
+					//context.beginPath();
+					
+					//drawID = setInterval(draw,10);
+					//clearInterval(drawID);
+					drawID = -1;
+					drawOK = true;
+					canvas.onmousemove = movePoint;	
+					console.log("begin");
+				}
+			}
+			function movePoint(event){
+				if(drawOK){
+					var rect=event.target.getBoundingClientRect();
+					x2=event.clientX - rect.left;
+					y2=event.clientY - rect.top;
+					
+					//draw line from previous mouse point (x1,y1) to current mouse point (x2,y2)
+					/*context.lineWidth=width;
+					context.strokeStyle=color;
+					context.lineTo(x2,y2);
+					context.lineCap="round";
+					context.stroke();*/
+					
+					//plug in (x2,y2) into (x1,y1)
+					x1=x2;
+					y1=y2;
+
+					graphx[i]=x2;
+					graphy[i]=y2;
+					i++;
+					
+					//clearInterval(drawID);
+					canvas.onmouseup = endPoint;
+				}
+			}
+			function endPoint(event){
+				drawOK = false;
+				canvas.onmousemove = null;
+				//clearInterval(drawID);
+				/*for(var j=0; j<graphx.length-1; j++){
+					drawLine(graphx[j],graphy[j],graphx[j+1],graphy[j+1]);		
+					//console.log(graphx[j]);
+				}*/	
+				console.log("continue");
+
+				count_count++;
+				draw_count[count_count] = i;		
+			}
+			
+			//listen for the left button to be held down
+			//init();
+			canvas.onmousedown = startPoint;
+		}	
+	}
+	/*function changecolor(){
+		color_count++;
+		var color_name = document.getElementById("color_select");
+		color[color_count] = color_name.value;
+		//clearInterval(drawID);
+		//console.log("changed color");
+		//test();
+	}
+	function changewidth(){
+		width_count++;
+		var width_name = document.getElementById("width_select");
+		width[width_count] = width_name.value;
+		//clearInterval(drawID);
+		//test();
+	}
+	function change(){
+		c_and_w_count++;
+		var color_name = document.getElementById("color_select");
+		var width_name = document.getElementById("width_select");
+		color[c_and_w_count] = color_name.value;
+		width[c_and_w_count] = width_name.value;
+	}*/
+	function drawLine(){
+		//when the draw line checkbox is changed, put whether the checkbox is checked or not into variable draw_line and restart function test()
+		draw_line = document.forms[0].elements[0].checked;
+		context.clearRect(0,0,600,200);
+		//clearInterval(drawID);
+		//test();
+	}
+	function drawRemLine(){
+		draw_rem_line = document.forms[0].elements[1].checked;
+		if(draw_rem_line){
+			for(var k=0; k<draw_count.length-1; k++){
+				for(var j=draw_count[k]; j<draw_count[k+1]-1; j++){
+					context.lineWidth = width[k];
+					context.strokeStyle = color[k];
+					context.lineCap = "round";
+					context.beginPath();	
+					context.moveTo(graphx[j],graphy[j]);
+					context.lineTo(graphx[j+1],graphy[j+1]);
+					context.stroke();
+					//console.log(graphx[j]);
+				}
+			}
+		}
+	}
+	function undo(){
+		if(draw_count[draw_count.length-1]>0){
+			buff[undo_count] = draw_count[draw_count.length-1];
+			//console.log(buff[undo_count]);
+			undo_count++;
+			draw_count.pop();
+		}
+		else{
+			alert("You can't undo anymore");
+		}
+	}
+	function redo(){
+		if(buff[undo_count-1]>0){
+			undo_count--;
+			draw_count.push(buff[undo_count]);
+			buff.pop();
+		}
+		else{
+			alert("You can't redo anymore");
+		}
+	}
+	
+	</script>
+</head>
+<body onLoad="test()">
+	<h2>This is a test canvas.</h2>
+	<select onChange="test()" id="color_select" style="margin: 10px; float: left;">
+		<option value="#000000" style="background-color: #000000; color: #FFF;" selected>BLACK</option>
+		<option value="#FF0000" style="background-color: #FF0000;">RED</option>
+		<option value="#0000FF" style="background-color: #0000FF;">BLUE</option>
+		<option value="#800080" style="background-color: #800080;">PURPLE</option>
+		<option value="#008000" style="background-color: #008000;">GREEN</option>
+	</select>
+	<select onChange="test()" id="width_select" style="margin: 10px; float: left;">
+		<option value="1">1px</option>
+		<option value="3">3px</option>
+		<option value="5" selected>5px</option>
+		<option value="7">7px</option>
+		<option value="10">10px</option>
+	</select>
+	<form style="margin: 10px; float: left;">
+		<input onChange="drawLine()" type="checkbox" name="select_line"/>Draw Line
+		<input onChange="drawRemLine()" type="checkbox" name="draw_remembered_line">Draw Remembered Line
+	</form>
+	<br style="clear: both;">
+	<form style="margin: 10px; float: left;">
+		<input onClick="undo()" type="button" value=" undo ">
+		<input onClick="redo()" type="button" value=" redo ">
+	</form>
+	<br style="clear: both;">
+	<canvas id="sample" style="border: 5px solid #000; margin: 10px;" width="600" height="200">
+		図形を表示するには、canvasタグをサポートしたブラウザが必要です。
+	</canvas>
+</body>
+</html>

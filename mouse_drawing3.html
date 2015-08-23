@@ -1,0 +1,108 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>Draw Lines</title>
+	<script type="text/javascript">
+	//成功バージョン！！
+	//this doesn't use "addEventListener".
+	//some global variables
+	var color="#000";
+	var width="5";
+	var draw_line = false;
+	var drawOK = false;
+	
+	function test(){
+		var canvas = document.getElementById('sample');
+		if (canvas.getContext){
+			var context = canvas.getContext("2d");
+			var x1=y1=x2=y2=0;
+			
+			function startPoint(event){
+				//listen for the mouse to be moved
+				if(draw_line === true){
+					var rect=event.target.getBoundingClientRect();
+					x1=event.clientX - rect.left;
+					y1=event.clientY - rect.top;
+					
+					//move starting point to the current mouse cursole
+					context.moveTo(x1,y1);
+					context.beginPath();
+					
+					drawOK = true;
+					canvas.onmousemove = movePoint;	
+					//console.log(draw_line);
+				}
+			}
+			function movePoint(event){
+				if(drawOK){
+					var rect=event.target.getBoundingClientRect();
+					x2=event.clientX - rect.left;
+					y2=event.clientY - rect.top;
+					
+					//draw line from previous mouse point (x1,y1) to current mouse point (x2,y2)
+					context.lineWidth=width;
+					context.strokeStyle=color;
+					//context.moveTo(x1,y1);
+					//context.beginPath();
+					context.lineTo(x2,y2);
+					context.lineCap="round";
+					context.stroke();
+					
+					//plug in (x2,y2) into (x1,y1)
+					x1=x2;
+					y1=y2;
+					
+					canvas.onmouseup = endPoint;
+				}
+			}
+			function endPoint(event){
+				drawOK = false;
+				canvas.onmousemove = null;
+				//console.log("continue");	
+			}
+			
+			//listen for the left button to be held down
+			canvas.onmousedown = startPoint;
+			}	
+	}
+	function changecolor(){
+		var color_name=document.getElementById("color_select");
+		color=color_name.value;
+	}
+	function changewidth(){
+		var width_name=document.getElementById("width_select");
+		width=width_name.value;
+	}
+	function drawLine(){
+		//when the draw line checkbox is changed, put whether the checkbox is checked or not into variable draw_line and restart function test()
+		draw_line = document.forms[0].elements[0].checked;
+		test();
+	}
+	</script>
+</head>
+<body onLoad="test()">
+	<h2>This is a test canvas.</h2>
+	<select onChange="changecolor()" id="color_select" style="margin: 10px; float: left;">
+		<option value="#000000" style="background-color: #000000; color: #FFF;" selected>BLACK</option>
+		<option value="#FF0000" style="background-color: #FF0000;">RED</option>
+		<option value="#0000FF" style="background-color: #0000FF;">BLUE</option>
+		<option value="#800080" style="background-color: #800080;">PURPLE</option>
+		<option value="#008000" style="background-color: #008000;">GREEN</option>
+	</select>
+	<select onChange="changewidth()" id="width_select" style="margin: 10px; float: left;">
+		<option value="1">1px</option>
+		<option value="3" selected>3px</option>
+		<option value="5">5px</option>
+		<option value="7">7px</option>
+		<option value="10">10px</option>
+	</select>
+	<form style="margin: 10px; float: left;">
+		<input onChange="drawLine()" type="checkbox" name="select_line"/>Draw Line
+	</form>
+	<br style="clear: both;">
+	<canvas id="sample" style="border: 5px solid #000; margin: 10px;" width="600" height="200">
+	図形を表示するには、canvasタグをサポートしたブラウザが必要です。
+	</canvas>
+</body>
+</html>

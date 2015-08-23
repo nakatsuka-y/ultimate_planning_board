@@ -1,0 +1,62 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>Canvas API</title>
+	<script type="text/javascript">
+	function test(){
+		var canvas = document.getElementById('sample');
+		if (canvas.getContext){
+			var context = canvas.getContext('2d');
+			context.strokeStyle='rgb(00,00,00)';
+			context.lineWidth=5;
+			context.fillStyle='rgb(255,00,00)';
+			
+			context.beginPath();
+			context.arc(150,100,50,0,Math.PI*2,true);
+			context.fill();
+			context.stroke();
+			//context.strokeStyle='rgb(255,255,255)';
+			//context.fillStyle='rgb(255,00,00)';
+		}
+	}
+	function test2(){
+		var canvas = document.getElementById('sample2');
+		if (canvas.getContext){
+			var context = canvas.getContext("2d");
+			var startX=0;
+			var startY=0;
+			
+			canvas.addEventListener("mousemove", function(event){
+				var rect=event.target.getBoundingClientRect();
+				var x=event.clientX - rect.left;
+				var y=event.clientY - rect.top;
+				
+				context.beginPath();
+				context.lineWidth=5;
+				context.strokeStyle="#000000";
+				context.moveTo(startX,startY);
+				context.lineTo(x,y);
+				context.stroke();
+				startX=x;
+				startY=y;
+			},true);
+			
+			/*canvas.addEventListener("mousedown", function(event){
+				var rect=event.target.getBoundingClientRect();
+				startX=event.clientX - rect.left;
+				startY=event.clientY - rect.top;
+			},true);*/
+		}
+	}
+	</script>
+</head>
+<body onLoad="test(),test2()">
+	<h2>This is a test canvas.</h2>
+	<canvas id="sample" style="background-color:green;" width="600" height="200">
+	図形を表示するには、canvasタグをサポートしたブラウザが必要です。
+	</canvas>
+	<canvas id="sample2" style="border: 5px solid #000;" width="600" height="200">
+	</canvas>
+</body>
+</html>

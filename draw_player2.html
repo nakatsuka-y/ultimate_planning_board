@@ -1,0 +1,217 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>Draw Player</title>
+	<script type="text/javascript">
+	// this version of draw_player will try to use classes to draw multiple players
+
+	//some global variables
+	/*var color = "#000";
+	var width = "5";
+	var x=100,y=100;
+	var dragOK = false;
+	//var drawOK = false;
+	var context = null;
+	var i=0;*/
+	
+	//booleans for checkboxes (these should not be included in the PLAYER class)
+	var drag_circle = false;
+	var draw_line = false;
+
+	//var graphx = new Array;
+	//var graphy = new Array;
+
+	var PLAYER = function(x_init,y_init){
+		// variables
+		this.color = "#000";
+		this.width = 5;
+		this.x = x_init;
+		this.y = y_init;
+		this.x1 = 0;
+		this.y1 = 0;
+		this.canvas = document.getElementById('sample');
+		this.context = this.canvas.getContext("2d");
+		this.i = 0;
+
+		// booleans
+		this.dragOK = false;
+		
+		// arrays
+		this.graphx = new Array;
+		this.graphy = new Array;
+
+		// functions
+		this.drawCircle = function(){
+			this.context.beginPath();
+			this.context.arc(this.x,this.y,20,0,Math.PI*2,false);
+			this.context.closePath();
+			this.context.strokeStyle = "#000";
+			this.context.fillStyle = "red";
+			this.context.lineWidth = 5;
+			this.context.stroke();
+			this.context.fill();
+		}
+		this.hold = function(event){
+			//console.log("dragable");
+			if(drag_circle){
+				var rect=event.target.getBoundingClientRect();
+				this.x1=event.clientX - rect.left;
+				this.y1=event.clientY - rect.top;
+				var distance = Math.sqrt(Math.pow(this.x1-this.x,2)+Math.pow(this.y1-this.y,2));
+				if(distance < 20){
+					this.x = event.pageX - this.canvas.offsetLeft;
+					this.y = event.pageY - this.canvas.offsetTop;
+					if(draw_line){
+						this.context.beginPath();
+						console.log("draw start");
+					}
+					this.dragOK = true;
+					this.canvas.onmousemove = this.drag;
+				}
+			}
+		}
+		this.drag = function(event){
+			if(this.dragOK){
+				this.x = event.pageX - this.canvas.offsetLeft;
+				this.y = event.pageY - this.canvas.offsetTop;
+				if(draw_line){
+					this.graphx[i]=this.x;
+					this.graphy[i]=this.y;
+					this.i++;
+				}
+				this.canvas.onmouseup = this.drop;
+			}
+		}
+		this.drop = function(event){
+			console.log("draw end");
+			this.dragOK = false;	
+			this.canvas.onmousemove = null;
+		}
+	}
+	// END OF CLASS "PLAYER" //
+
+	/*function drawCircle(x,y){
+		context.beginPath();
+		context.arc(x,y,20,0,Math.PI*2,false);
+		context.closePath();
+		context.strokeStyle = "#000";
+		context.fillStyle = "red";
+		context.lineWidth = 5;
+		context.stroke();
+		context.fill();
+	}*/
+	function draw(){
+		player[k].context.clearRect(0,0,800,200);
+		
+		for(var k=0; k<7; k++){
+			for(var j=0; j<player[k].graphx.length-1; j++){
+				player[k].context.lineWidth = 5;
+				player[k].context.strokeStyle = "black";
+				player[k].context.lineCap = "round";
+				player[k].context.moveTo(player[k].graphx[j],player[k].graphy[j]);
+				player[k].context.lineTo(player[k].graphx[j+1],player[k].graphy[j+1]);
+				player[k].context.stroke();
+			}
+	
+			player[k].drawCircle(x,y);
+		}
+	}
+	function test(){
+		/*var canvas = document.getElementById('sample');
+
+		var x1=y1=x2=y2=0;
+		if (canvas.getContext){
+			function init(){
+				canvas = document.getElementById('sample');
+				context = canvas.getContext("2d");	
+				return setInterval(draw,10);
+			}
+				
+			function hold(event){
+				//console.log("dragable");
+				if(drag_circle){
+					var rect=event.target.getBoundingClientRect();
+					x1=event.clientX - rect.left;
+					y1=event.clientY - rect.top;
+					var distance = Math.sqrt(Math.pow(x1-x,2)+Math.pow(y1-y,2));
+					if(distance < 20){
+						x = event.pageX - canvas.offsetLeft;
+						y = event.pageY - canvas.offsetTop;
+						if(draw_line){
+							context.beginPath();
+							console.log("draw start");
+						}
+						dragOK = true;
+						canvas.onmousemove = drag;
+					}
+				}
+			}
+			function drag(event){
+				if(dragOK){
+					x = event.pageX - canvas.offsetLeft;
+					y = event.pageY - canvas.offsetTop;
+					if(draw_line){
+						graphx[i]=x;
+						graphy[i]=y;
+						i++;
+					}
+					canvas.onmouseup = drop;
+				}
+			}
+			function drop(event){
+				console.log("draw end");
+				dragOK = false;	
+				canvas.onmousemove = null;
+			}
+			init();
+			canvas.onmousedown = hold;
+		}*/
+		var player1 = new PLAYER(1*100+20,100);
+		var player2 = new PLAYER(2*100+20,100);
+		var player3 = new PLAYER(3*100+20,100);
+		var player4 = new PLAYER(4*100+20,100);
+		var player5 = new PLAYER(5*100+20,100);
+		var player6 = new PLAYER(6*100+20,100);
+		var player7 = new PLAYER(7*100+20,100);
+
+		function init(){
+				//canvas = document.getElementById('sample');
+				//context = canvas.getContext("2d");	
+				return setInterval(draw,10);
+		}
+
+		
+		init();
+		player1.canvas.onmousedown = player1.hold;
+		player2.canvas.onmousedown = player2.hold;
+		player3.canvas.onmousedown = player3.hold;
+		player4.canvas.onmousedown = player4.hold;
+		player5.canvas.onmousedown = player5.hold;
+		player6.canvas.onmousedown = player6.hold;
+		player7.canvas.onmousedown = player7.hold;
+
+	
+	}
+	function dragPlayer(){
+		drag_circle = document.forms[0].elements[0].checked;
+		test();
+	}
+	function drawLine(){
+		draw_line = document.forms[0].elements[1].checked;
+		test();
+	}
+	</script>
+</head>
+<body onLoad="test()">
+	<h2>This is a test canvas.</h2>
+	<form style="margin: 10px; float: left;">
+		<input onChange="dragPlayer()" type="checkbox"/>Drag Player
+		<input onChange="drawLine()" type="checkbox">Draw Line
+	</form>
+	<br style="clear: both;">
+	<canvas id="sample" style="border: 5px solid #000; margin: 10px;" width="800" height="200">
+		図形を表示するには、canvasタグをサポートしたブラウザが必要です。
+	</canvas>
+</body>
+</html>
