@@ -1,0 +1,285 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<title>Draw Player</title>
+	<script type="text/javascript">
+	// 2015/09/14:  this version aims to be able to use the draw player feature on tablets.
+	// 2015/09/16:  this version has succeeded to use the draw player feature on tablets and also on normal computers.
+
+	//some global variables
+	var canvas = null;
+	var context = null;
+	var canvas_width = 0;
+	var canvas_height = 0;
+	var radius = 0;
+	var formation = 0; // 0: stack, 1: horizontal
+	var player_color = new Array("#330099","#3300cc","#3300ff","#cc00cc","#cc0099","#cc0066","#cc0033");
+	
+	//booleans (these should not be included in the PLAYER class)
+	var drag_circle = false;
+	var draw_line = false;
+	var touchable = false;
+
+	// instance for PLAYER class
+	var player = new Array;
+
+	function w_h_check(){
+		canvas_width = window.innerWidth-100;
+		canvas_height = window.innerHeight-150;
+		document.getElementById('sample').width = canvas_width;
+		document.getElementById('sample').height = canvas_height;
+		//console.log(canvas_width + ", " + canvas_height);
+		//document.getElementById('sample').style.marginLeft = (window.innerWidth - canvas_width -10)/2 + "px";
+	}
+
+	function test(){
+		w_h_check();
+		for(var j=0; j<7; j++){
+			if(canvas_width > canvas_height){
+				radius = canvas_width/32;
+	 			console.log("0");
+				if(formation === 0){
+					if(j===0){
+						player[j] = new PLAYER(canvas_width/16,canvas_height/2);
+					}
+					else{
+						player[j] = new PLAYER((j+1)*canvas_width/8+canvas_width/16,canvas_height/2);
+					}
+					//console.log("stack");
+				}
+				if(formation === 1){
+					if(j<3){
+						player[j] = new PLAYER(canvas_width/3,j*(canvas_height/5)+canvas_height*3/10);
+					}
+					else{
+						player[j] = new PLAYER(canvas_width*2/3,(j-2)*(canvas_height/5));
+					}
+					//console.log("horizon");
+				}
+			}
+			if(canvas_width < canvas_height){
+				radius = canvas_height/32;
+				console.log("1");
+				if(formation === 0){
+					if(j===0){
+						player[j] = new PLAYER(canvas_width/2,canvas_height/16);
+					}
+					else{
+						player[j] = new PLAYER(canvas_width/2,(j+1)*canvas_height/8+canvas_height/16);
+					}
+					//console.log("stack");
+				}
+				if(formation === 1){
+					if(j<3){
+						player[j] = new PLAYER(j*(canvas_width/5)+canvas_width*3/10,canvas_height/3);
+					}
+					else{
+						player[j] = new PLAYER((j-2)*(canvas_width/5),canvas_height*2/3);
+					}
+					//console.log("horizon");
+				}
+			}
+		}
+		
+		canvas = document.getElementById('sample');
+		context = canvas.getContext("2d");	
+		setInterval(draw,200);
+		
+
+		if("ontouchstart" in window){
+			touchable = true;
+			for(var j=0; j<7; j++){
+				canvas.addEventListener("touchstart",player[j].hold,false);
+			}
+		}
+		else{
+			touchable = false;
+			for(var j=0; j<7; j++){
+				canvas.addEventListener("mousedown",player[j].hold,false);	
+			}
+		}
+		
+	}
+	function draw(){
+		context.clearRect(0,0,canvas_width,canvas_height);
+		
+		for(var k=0; k<7; k++){
+			context.beginPath();
+			for(var j=0; j<player[k].graphx.length-1; j++){
+				context.lineWidth = 5;
+				context.strokeStyle = "black";
+				context.lineCap = "round";
+				context.moveTo(player[k].graphx[j],player[k].graphy[j]);
+				context.lineTo(player[k].graphx[j+1],player[k].graphy[j+1]);
+				context.stroke();
+			}
+			context.closePath();
+			
+			player[k].drawCircle(player[k].x,player[k].y,k);
+		}
+	}
+
+	// BEGINNING OF "PLAYER" CLASS //
+
+	function PLAYER(x_init,y_init){
+		// variables
+		this.color = "#000";
+		this.width = 5;
+		this.x = x_init;
+		this.y = y_init;
+		this.x1 = 0;
+		this.y1 = 0;
+		this.player_i = 0;
+		this.rect;
+		this.distance;
+
+		// booleans
+		this.dragOK = false;
+		
+		// arrays
+		this.graphx = new Array;
+		this.graphy = new Array;
+
+		return this;
+	}
+	PLAYER.prototype.drawCircle = function(x,y,k){
+		context.strokeStyle = "#000";
+		context.fillStyle = player_color[k];
+		context.lineWidth = 3;
+		context.beginPath();
+		context.arc(x,y,radius,0,Math.PI*2,false);
+		context.closePath();
+		context.fill();
+		context.stroke();
+	}
+	PLAYER.prototype.show = function(j){
+		console.log(player[j].x+", "+player[j].x1);
+	}
+	PLAYER.prototype.hold = function(event){
+		for(var j=0; j<7; j++){
+			console.log("dragable");
+			if(drag_circle){
+				/*player[j].rect = event.target.getBoundingClientRect();
+				player[j].x1 = event.clientX - player[j].rect.left;
+				player[j].y1 = event.clientY - player[j].rect.top;*/
+				if(touchable){
+					//for(var k=0; k<event.touches.length; ++k){
+						player[j].x1 = event.touches[0].pageX - canvas.offsetLeft;
+						player[j].y1 = event.touches[0].pageY - canvas.offsetTop;
+					//}
+				}
+				else{
+					player[j].x1 = event.pageX - canvas.offsetLeft;
+					player[j].y1 = event.pageY - canvas.offsetTop;
+				}
+				player[j].distance = Math.sqrt(Math.pow(player[j].x1-player[j].x,2)+Math.pow(player[j].y1-player[j].y,2));
+				//console.log(player[j].distance+", "+player[j].x1+", "+player[j].x+", "+player[j].rect.left);	
+				if(player[j].distance < radius){
+					if(touchable){
+						//for(var k=0; k<event.touches.length; ++k){
+							player[j].x = event.touches[0].pageX - canvas.offsetLeft;
+							player[j].y = event.touches[0].pageY - canvas.offsetTop;
+						//}
+					}
+					else{
+						player[j].x = event.pageX - canvas.offsetLeft;
+						player[j].y = event.pageY - canvas.offsetTop;
+					}
+					/*player[j].x = event.clientX - player[j].rect.left;
+					player[j].y = event.clientY - player[j].rect.top;*/
+					console.log("drag start");
+					//alert("drag start");
+					if(draw_line){
+						context.beginPath();
+						console.log("draw start");
+					}
+					player[j].dragOK = true;
+					if(touchable){
+						canvas.addEventListener("touchmove",player[j].drag,false);
+					}
+					else{
+						canvas.addEventListener("mousemove",player[j].drag,false);
+					}	
+				}	
+			}
+		}
+	}
+	PLAYER.prototype.drag = function(event){
+		for(var j=0; j<7; j++){
+			if(player[j].dragOK){
+				if(touchable){
+					//for(var k=0; k<event.touches.length; ++k){
+						player[j].x = event.touches[0].pageX - canvas.offsetLeft;
+						player[j].y = event.touches[0].pageY - canvas.offsetTop;
+					//}
+				}
+				else{
+					player[j].x = event.pageX - canvas.offsetLeft;
+					player[j].y = event.pageY - canvas.offsetTop;	
+				}
+				if(draw_line){
+					player[j].graphx[player[j].player_i]=player[j].x;
+					player[j].graphy[player[j].player_i]=player[j].y;
+					player[j].player_i++;
+				}
+				if(touchable){
+					canvas.addEventListener("touchend",player[j].drop,false);
+				}
+				else{
+					canvas.addEventListener("mouseup",player[j].drop,false);
+				}
+			}
+		}
+	}
+	PLAYER.prototype.drop = function(event){
+		for(var j=0; j<7; j++){
+			context.closePath();
+			console.log("end");
+			player[j].dragOK = false;	
+		}
+	}
+
+
+	// END OF CLASS "PLAYER" //
+
+	
+	function dragPlayer(){
+		drag_circle = document.forms[0].elements[0].checked;	
+	}
+	function drawLine(){
+		draw_line = document.forms[0].elements[1].checked;
+	}
+	function resetPosition(){
+		/*for(var j=0; j<7; j++){
+			player[j].x = (j+1)*100;
+			player[j].y = 100;
+		}	
+		context.clearRect(0,0,800,200);*/
+		test();
+	}
+	function changeFormation(){
+		formation = eval(document.getElementById("formation_select").value);
+		//context.clearRect(0,0,canvas_width,canvas_height);
+		test();
+	}
+	</script>
+</head>
+<body onLoad="test()" onResize="test()" style="text-align: center;">
+	<!--<h2>This is a test canvas.</h2>-->
+	<form style="margin: 10px; float: left;">
+		<input onChange="dragPlayer()" type="checkbox"/>Drag Player
+		<input onChange="drawLine()" type="checkbox" style="margin-left: 10px;">Draw Player Line
+		<input onClick="resetPosition()" type="button" value="Reset Position" style="margin-left: 10px;">
+	</form>
+	<select onChange="changeFormation()" id="formation_select" style="margin: 10px; float: left;">
+		<option value="0" selected>STACK</option>
+		<option value="1" >HORIZONTAL</option>	
+	</select>
+	<br style="clear: both;">
+	<canvas id="sample" style="border: 5px solid #000; margin: 10px auto;">
+		図形を表示するには、canvasタグをサポートしたブラウザが必要です。
+	</canvas>
+</body>
+</html>

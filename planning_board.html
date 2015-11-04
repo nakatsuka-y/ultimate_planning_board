@@ -2,61 +2,783 @@
 <html lang="ja">
 <head>
 	<meta charset="UTF-8">
-	<title>Canvas API</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<title>Planning Board</title>
+	<style type="text/css">
+	div#sidemenu{
+		width: 150px; 
+		height: 100%; 
+		position: fixed; 
+		right: -150px; 
+		top: 0px;
+		text-align: left;
+		z-index: 100;
+		transition: transform 0.3s ease-in-out 0s;
+		backface-visibility: hidden;
+		background-color: #f8f8ff;
+		border: 1px solid #dcdcdc;
+		transform-style: preserve-3d;
+	}
+	</style>
+
+	<script>
+		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+		ga('create', 'UA-54553082-1', 'auto');
+		ga('send', 'pageview');
+
+	</script>
+
 	<script type="text/javascript">
-	function test(){
-		var canvas = document.getElementById('sample');
-		if (canvas.getContext){
-			var context = canvas.getContext('2d');
-			context.strokeStyle='rgb(00,00,00)';
-			context.lineWidth=5;
-			context.fillStyle='rgb(255,00,00)';
-			
-			context.beginPath();
-			context.arc(150,100,50,0,Math.PI*2,true);
-			context.fill();
-			context.stroke();
-			//context.strokeStyle='rgb(255,255,255)';
-			//context.fillStyle='rgb(255,00,00)';
+
+	// This is the latest version of the Ultimate Planning Board (as of: 2015/10/03)
+	// 2015/09/25:  Several changes have been made.
+	// 		1. "Reset Position" button is now "Reset" button.
+	// 		2. "Draw Player line" checkbox is now "Drag Player + Draw Line" checkbox. This should make it more clearer for users.
+	// 		3. Introduced two more canvases in order to divide drawing lines with dragging circles, which makes the process more lighter.
+	// 2015/09/27:  Made several changes.
+	// 		1. Changed positions of players
+	// 		2. Created a menu for easir use
+	// 2015/09/28:  Made several changes.
+	// 		1. Made a system to prevent circles from getting on top of each other by understanding which circle is active.
+	// 		2. Made a system to make it easier to drag circles when using the planning board on a smartphone.
+	// 2015/09/29:  Made several changes.
+	// 		1. Drew a circle that represents the disc, and also programmed its movement.
+	// 2015/10/03:  Made several changes.
+	// 		1. Included online help.
+
+	//////////////////////
+	// COMMON VARIABLES //
+	//////////////////////
+
+	var canvas = null;
+	var context = null;
+	var canvas2 = null;
+	var context2 = null;
+	var canvas3 = null;
+	var context3 = null;
+	var control_canvas = null;
+	var canvas_width = 0;
+	var canvas_height = 0;
+	var touchable = false;
+	var time = 100;
+	var active_player = 0;
+	var disc_holder = 0;
+	
+
+	/////////////////////////////////////////////////
+	// VARIABLES AND FUNCTIONS FOR DRAWING PLAYERS //
+	/////////////////////////////////////////////////
+
+	//global variables
+	var radius = 0;
+	var formation = 0; // 0: stack, 1: horizontal
+	var player_color = new Array("#330099","#3300cc","#3300ff","#cc00cc","#cc0099","#cc0066","#cc0033","#ffffff");
+
+	
+	//booleans (these should not be included in the PLAYER class)
+	var drag_circle = true;
+	var p_draw_line = false;
+	
+	// instance for PLAYER class
+	var player = new Array;
+
+	// functions
+	function dragPlayer(){
+		drag_circle = document.forms[0].elements[0].checked;
+		if(p_draw_line){
+			p_draw_line = document.forms[0].elements[1].checked = false;
+		}
+		if(draw_line){
+			draw_line = document.forms[0].elements[2].checked = false;
+		}
+		if(erase_line){
+			erase_line = document.forms[0].elements[3].checked = false;
 		}
 	}
-	function test2(){
-		var canvas = document.getElementById('sample2');
+	function p_drawLine(){
+		p_draw_line = document.forms[0].elements[1].checked;
+		if(drag_circle){
+			drag_circle = document.forms[0].elements[0].checked = false;
+		}
+		if(draw_line){
+			draw_line = document.forms[0].elements[2].checked = false;
+		}
+		if(erase_line){
+			erase_line = document.forms[0].elements[3].checked = false;
+		}
+	}
+	function resetPosition(){
+		main();
+	}
+	function changeFormation(){
+		formation = eval(document.getElementById("formation_select").value);
+		main();
+	}
+
+	///////////////////////////////////////////////
+	// VARIABLES AND FUNCTIONS FOR DRAWING LINES //
+	///////////////////////////////////////////////
+
+	//global variables
+	var color = "#000";
+	var width = 5;
+
+	var draw_line = false;
+	var erase_line = false;
+	var drawOK = false;
+
+	// function
+	function drawLine(){
+		//when the draw line checkbox is changed, put whether the checkbox is checked or not into variable draw_line and restart function test()
+		draw_line = document.forms[0].elements[2].checked;
+		if(drag_circle){
+			drag_circle = document.forms[0].elements[0].checked = false;
+		}
+		if(p_draw_line){
+			p_draw_line = document.forms[0].elements[1].checked = false;
+		}
+		if(erase_line){
+			erase_line = document.forms[0].elements[3].checked = false;
+		}
+	}
+	function eraseLine(){
+		erase_line = document.forms[0].elements[3].checked
+		if(drag_circle){
+			drag_circle = document.forms[0].elements[0].checked = false;
+		}
+		if(p_draw_line){
+			p_draw_line = document.forms[0].elements[1].checked = false;
+		}
+		if(!draw_line){
+			draw_line = document.forms[0].elements[2].checked = true;
+		}
+	}
+	function changeC_W(){
+		var color_name = document.getElementById("color_select");
+		var width_name = document.getElementById("width_select");
+		color = color_name.value;
+		width = width_name.value;
+	}
+	function openMenu(){
+		document.getElementById('sidemenu').style.right = "0px";
+		document.getElementById('sidemenu').style.transform = "translate3d(0px,0px,0px)";
+	}
+	function closeMenu(){
+		document.getElementById('sidemenu').style.right = "0px";
+		document.getElementById('sidemenu').style.transform = "translate3d(150px,0px,0px)";
+	}
+
+	////////////////////////////////////
+	// END OF VARIABLES AND FUNCTIONS //
+	////////////////////////////////////
+
+	////////////////////////////
+	// START OF MAIN FUNCTION //
+	////////////////////////////
+
+	function main(){
+		canvas = document.getElementById('sample');
+		canvas2 = document.getElementById('sample2');
+		canvas3 = document.getElementById('sample3');
+		canvas_width = window.innerWidth-100;
+		canvas_height = window.innerHeight-170;
+		canvas.width = canvas_width;
+		canvas.height = canvas_height;
+		canvas2.width = canvas_width;
+		canvas2.height = canvas_height;
+		canvas3.width = canvas_width;
+		canvas3.height = canvas_height;
+
+		document.body.style.height = (window.innerHeight-40)+"px";
+		document.getElementById('sidemenu').style.transform = "translate3d(150px,0px,0px)"; // I have to put this into this place because the browser doesn't want me to up the style in it.
+
+		control_canvas = canvas;
+		disc_holder = 0;
+
+		///////////////
+		// DRAW LINE //
+		///////////////
+
+		var x1=y1=x2=y2=0;
 		if (canvas.getContext){
-			var context = canvas.getContext("2d");
-			var startX=0;
-			var startY=0;
+			context = canvas.getContext("2d");
+			context2 = canvas2.getContext("2d");
+			context3 = canvas3.getContext("2d");
+
+			console.log(draw_line);
 			
-			canvas.addEventListener("mousemove", function(event){
-				var rect=event.target.getBoundingClientRect();
-				var x=event.clientX - rect.left;
-				var y=event.clientY - rect.top;
+			function startPoint(event){
+				//listen for the mouse to be moved
+				event.preventDefault();
+				if(draw_line){
+					console.log("drawable");
+					if(touchable){
+						x1 = event.touches[0].pageX - control_canvas.offsetLeft;
+						y1 = event.touches[0].pageY - control_canvas.offsetTop;
+					}
+					else{
+						x1 = event.pageX - control_canvas.offsetLeft;
+						y1 = event.pageY - control_canvas.offsetTop;
+					}
+					
+					if(!erase_line){
+						var color_name = document.getElementById("color_select");
+						var width_name = document.getElementById("width_select");
+						color = color_name.value;
+						width = width_name.value;
+					}
+					else{
+						color = "#FFF";
+						width = 50;
+					}
+
+					//move starting point to the current mouse cursole
+					context2.beginPath();
+					
+					
+					drawOK = true;
+					if(touchable){
+						//control_canvas.addEventListener("touchmove", movePoint, false);
+						control_canvas.ontouchmove = movePoint;
+					}
+					else{
+						//control_canvas.addEventListener("mousemove", movePoint, false);
+						control_canvas.onmousemove = movePoint;
+					}
+					console.log("begin");
+				}
+			}
+			function movePoint(event){
+				event.preventDefault();
+				if(drawOK){
+					if(touchable){
+						x2 = event.touches[0].pageX - control_canvas.offsetLeft;
+						y2 = event.touches[0].pageY - control_canvas.offsetTop;
+					}
+					else{
+						x2 = event.pageX - control_canvas.offsetLeft;
+						y2 = event.pageY - control_canvas.offsetTop;
+					}
+					
+					//draw line from previous mouse point (x1,y1) to current mouse point (x2,y2)
+					context2.lineWidth = width;
+					context2.strokeStyle = color;
+					context2.moveTo(x1,y1);
+					context2.lineTo(x2,y2);
+					context2.lineCap="round";
+					context2.stroke();
+					
+					//plug in (x2,y2) into (x1,y1)
+					x1=x2;
+					y1=y2;
+
+					
+					if(touchable){
+						//control_canvas.addEventListener("touchend", endPoint, false);
+						control_canvas.ontouchend = endPoint;
+					}
+					else{
+						//control_canvas.addEventListener("mouseup", endPoint, false);
+						control_canvas.onmouseup = endPoint;
+					}
+				}
+			}
+			function endPoint(event){
+				event.preventDefault();
+				context2.closePath();
 				
-				context.beginPath();
-				context.lineWidth=5;
-				context.strokeStyle="#000000";
-				context.moveTo(startX,startY);
-				context.lineTo(x,y);
-				context.stroke();
-				startX=x;
-				startY=y;
-			},true);
+				drawOK = false;
+				console.log("continue");
+
+			}
 			
-			/*canvas.addEventListener("mousedown", function(event){
-				var rect=event.target.getBoundingClientRect();
-				startX=event.clientX - rect.left;
-				startY=event.clientY - rect.top;
-			},true);*/
+			//listen for the left button to be held down
+			if("ontouchstart" in window){
+				touchable = true;
+				//control_canvas.addEventListener("touchstart", startPoint, false);
+				control_canvas.ontouchstart = startPoint;
+			}
+			else{
+				touchable = false;
+				//control_canvas.addEventListener("mousedown", startPoint, false);
+				control_canvas.onmousedown = startPoint;
+			}
+		}
+
+		/////////////////
+		// DRAW PLAYER //
+		/////////////////
+
+		var px2=py2=px3=py3=0;
+		for(var j=0; j<8; j++){
+			if(canvas_width > canvas_height){
+				radius = canvas_width/32;
+	 			//console.log("0");
+				if(formation === 0){
+					if(j===0){
+						player[j] = new PLAYER(canvas_width/16,canvas_height/2);
+						player[j].hold_disc = true;
+					}
+					else if(j===7){
+						player[j] = new PLAYER(canvas_width/16,canvas_height/2 + 2*radius);
+					}
+					else{
+						player[j] = new PLAYER((j+1)*canvas_width/8+canvas_width/16,canvas_height/2);
+					}
+					//console.log("stack");
+				}
+				if(formation === 1){
+					if(j<3){
+						player[j] = new PLAYER(canvas_width/3,j*(canvas_height/5)+canvas_height*3/10);
+						if(j===0){
+							player[j].hold_disc = true;
+						}
+					}
+					else if(j===7){
+						player[j] = new PLAYER(canvas_width/3,canvas_height/2 + 2*radius);
+					}
+					else{
+						player[j] = new PLAYER(canvas_width*2/3,(j-2)*(canvas_height/5));
+					}
+					//console.log("horizon");
+				}
+			}
+			if(canvas_width < canvas_height){
+				radius = canvas_height/32;
+				//console.log("1");
+				if(formation === 0){
+					if(j===0){
+						player[j] = new PLAYER(canvas_width/2,canvas_height-canvas_height/16);
+						player[j].hold_disc = true;
+					}
+					else if(j===7){
+						player[j] = new PLAYER(canvas_width/2 + 2*radius,canvas_height-canvas_height/16);
+					}
+					else{
+						player[j] = new PLAYER(canvas_width/2,canvas_height-((j+1)*canvas_height/8+canvas_height/16));
+					}
+					//console.log("stack");
+				}
+				if(formation === 1){
+					if(j<3){
+						player[j] = new PLAYER(j*(canvas_width/5)+canvas_width*3/10,canvas_height*2/3);
+						if(j===0){
+							player[j].hold_disc = true;
+						}
+					}
+					else if(j===7){
+						player[j] = new PLAYER(canvas_width/2 + 2*radius,canvas_height*2/3);
+					}
+					else{
+						player[j] = new PLAYER((j-2)*(canvas_width/5),canvas_height/3);
+					}
+					//console.log("horizon");
+				}
+			}
+		}
+		
+		setInterval(draw,time);
+		/*function loop(){
+			draw();
+			window.requestAnimationFrame(loop);
+		}
+		loop();*/
+		
+
+		if("ontouchstart" in window){
+			touchable = true;
+			for(var j=0; j<8; j++){
+				control_canvas.addEventListener("touchstart",player[j].hold,false);
+			}
+		}
+		else{
+			touchable = false;
+			for(var j=0; j<8; j++){
+				control_canvas.addEventListener("mousedown",player[j].hold,false);	
+			}
+		}
+		
+	}
+
+	//////////////////////////
+	// END OF MAIN FUNCTION //
+	//////////////////////////
+
+	////////////////////////////
+	// START OF DRAW FUNCTION //
+	////////////////////////////
+
+	function draw(){
+		context.clearRect(0,0,canvas_width,canvas_height);
+
+		/////////////////////////////////////
+		// DRAW FUNCTION FOR DRAWING LINES //
+		/////////////////////////////////////
+
+		
+		///////////////////////////////////////
+		// DRAW FUNCTION FOR DRAWING PLAYERS //
+		///////////////////////////////////////
+
+		for(var k=0; k<8; k++){			
+			player[k].drawCircle(player[k].x,player[k].y,k);
 		}
 	}
+
+	//////////////////////////
+	// END OF DRAW FUNCTION //
+	//////////////////////////
+
+	/////////////////////////////////
+	// BEGINNING OF "PLAYER" CLASS //
+	/////////////////////////////////
+
+	function PLAYER(x_init,y_init){
+		// variables
+		this.color = "#000";
+		this.width = 5;
+		this.x = x_init;
+		this.y = y_init;
+		this.x1 = 0;
+		this.y1 = 0;
+		this.distance;
+
+		// booleans
+		this.dragOK = false;
+		this.hold_disc = false;
+		
+		return this;
+	}
+	PLAYER.prototype.drawCircle = function(x,y,k){
+		context.strokeStyle = "#000";
+		context.fillStyle = player_color[k];
+		context.lineWidth = 3;
+		context.beginPath();
+		context.arc(x,y,radius,0,Math.PI*2,false);
+		context.closePath();
+		context.fill();
+		context.stroke();
+	}
+	PLAYER.prototype.hold = function(event){
+		event.preventDefault();
+		for(var j=0; j<8; j++){
+			console.log("dragable");
+			player[j].hold_disc = false;
+			if(drag_circle){
+				if(touchable){
+					player[j].x1 = event.touches[0].pageX - control_canvas.offsetLeft;
+					player[j].y1 = event.touches[0].pageY - control_canvas.offsetTop;
+				}
+				else{
+					player[j].x1 = event.pageX - control_canvas.offsetLeft;
+					player[j].y1 = event.pageY - control_canvas.offsetTop;
+				}
+				if(canvas_width < 300 || canvas_height < 300){
+					player[j].distance = Math.sqrt(Math.pow(player[j].x1-player[j].x,2)+Math.pow(player[j].y1-player[j].y,2)) - 10;
+				}
+				else{
+					player[j].distance = Math.sqrt(Math.pow(player[j].x1-player[j].x,2)+Math.pow(player[j].y1-player[j].y,2));		
+				}
+				//console.log(player[j].distance+", "+player[j].x1+", "+player[j].x+", "+player[j].rect.left);	
+				if(player[j].distance < radius){
+					active_player = j;
+					if(touchable){
+						player[j].x = event.touches[0].pageX - control_canvas.offsetLeft;
+						player[j].y = event.touches[0].pageY - control_canvas.offsetTop;
+					}
+					else{
+						player[j].x = event.pageX - control_canvas.offsetLeft;
+						player[j].y = event.pageY - control_canvas.offsetTop;
+					}
+					console.log("drag start");
+					
+					player[j].dragOK = true;
+					
+					if(touchable){
+						control_canvas.addEventListener("touchmove",player[j].drag,false);
+					}
+					else{
+						control_canvas.addEventListener("mousemove",player[j].drag,false);
+					}	
+				}	
+			}
+			if(p_draw_line){
+				if(touchable){
+					player[j].x1 = event.touches[0].pageX - control_canvas.offsetLeft;
+					player[j].y1 = event.touches[0].pageY - control_canvas.offsetTop;
+				}
+				else{
+					player[j].x1 = event.pageX - control_canvas.offsetLeft;
+					player[j].y1 = event.pageY - control_canvas.offsetTop;
+				}
+				if(canvas_width < 300 || canvas_height < 300){
+					player[j].distance = Math.sqrt(Math.pow(player[j].x1-player[j].x,2)+Math.pow(player[j].y1-player[j].y,2)) - 10;
+				}
+				else{
+					player[j].distance = Math.sqrt(Math.pow(player[j].x1-player[j].x,2)+Math.pow(player[j].y1-player[j].y,2));		
+				}
+				//console.log(player[j].distance+", "+player[j].x1+", "+player[j].x+", "+player[j].rect.left);	
+				if(player[j].distance < radius){
+					active_player = j;
+					if(touchable){
+						px2 = player[j].x = event.touches[0].pageX - control_canvas.offsetLeft;
+						py2 = player[j].y = event.touches[0].pageY - control_canvas.offsetTop;
+					}
+					else{
+						px2 = player[j].x = event.pageX - control_canvas.offsetLeft;
+						py2 = player[j].y = event.pageY - control_canvas.offsetTop;
+					}
+					console.log("drag start");
+					
+					player[j].dragOK = true;
+					//player[j].hold_disc = false;
+					
+					if(touchable){
+						control_canvas.addEventListener("touchmove",player[j].drag,false);
+					}
+					else{
+						control_canvas.addEventListener("mousemove",player[j].drag,false);
+					}	
+				}	
+
+				context3.beginPath();	
+				console.log("draw start");
+			}
+		}
+	}
+	PLAYER.prototype.drag = function(event){
+		event.preventDefault();
+		if(player[active_player].dragOK){
+			if(drag_circle){
+				if(touchable){
+					player[active_player].x = event.touches[0].pageX - control_canvas.offsetLeft;
+					player[active_player].y = event.touches[0].pageY - control_canvas.offsetTop;
+					if(active_player === disc_holder){
+						if(canvas_width < canvas_height){
+							player[7].x = player[active_player].x + 2*radius;
+							player[7].y = player[active_player].y;
+						}
+						if(canvas_width > canvas_height){
+							player[7].x = player[active_player].x;
+							player[7].y = player[active_player].y + 2*radius;
+						}
+					}
+				}
+				else{
+					player[active_player].x = event.pageX - control_canvas.offsetLeft;
+					player[active_player].y = event.pageY - control_canvas.offsetTop;
+					if(active_player === disc_holder){
+						if(canvas_width < canvas_height){
+							player[7].x = player[active_player].x + 2*radius;
+							player[7].y = player[active_player].y;
+						}
+						if(canvas_width > canvas_height){
+							player[7].x = player[active_player].x;
+							player[7].y = player[active_player].y + 2*radius;
+						}
+					}
+				}
+			}
+			if(p_draw_line){
+				if(touchable){
+					px3 = player[active_player].x = event.touches[0].pageX - control_canvas.offsetLeft;
+					py3 = player[active_player].y = event.touches[0].pageY - control_canvas.offsetTop;
+					if(active_player === disc_holder){
+						if(canvas_width < canvas_height){
+							px3 = player[7].x = player[active_player].x + 2*radius;
+							py3 = player[7].y = player[active_player].y;
+						}
+						if(canvas_width > canvas_height){
+							px3 = player[7].x = player[active_player].x;
+							py3 = player[7].y = player[active_player].y + 2*radius;
+						}
+					}
+				}
+				else{
+					px3 = player[active_player].x = event.pageX - control_canvas.offsetLeft;
+					py3 = player[active_player].y = event.pageY - control_canvas.offsetTop;
+					if(active_player === disc_holder){
+						if(canvas_width < canvas_height){
+							px3 = player[7].x = player[active_player].x + 2*radius;
+							py3 = player[7].y = player[active_player].y;
+						}
+						if(canvas_width > canvas_height){
+							px3 = player[7].x = player[active_player].x;
+							py3 = player[7].y = player[active_player].y + 2*radius;
+						}
+					}
+				}
+				
+				//draw line from previous mouse point (x1,y1) to current mouse point (x2,y2)
+				context3.lineWidth = 5;
+				if(active_player === 7){
+					context3.strokeStyle = "#008080";
+				}
+				else{
+					context3.strokeStyle = "#cc6600";
+				}
+				context3.moveTo(px2,py2);
+				context3.lineTo(px3,py3);
+				context3.lineCap="round";
+				context3.stroke();
+				
+				//plug in (x2,y2) into (x1,y1)
+				px2=px3;
+				py2=py3;
+			}
+			if(touchable){
+				control_canvas.addEventListener("touchend",player[active_player].drop,false);
+			}
+			else{
+				control_canvas.addEventListener("mouseup",player[active_player].drop,false);
+			}
+		}	
+	}
+	PLAYER.prototype.drop = function(event){
+		event.preventDefault();
+		if(p_draw_line){
+			context3.closePath();
+		}
+		console.log("end");
+		player[active_player].dragOK = false;	
+		for(var j=0; j<8; j++){ // this loop is for preventing circles from getting on top of each other
+			if( j != active_player){
+				var chkdis = Math.sqrt(Math.pow(player[active_player].x-player[j].x,2)+Math.pow(player[active_player].y-player[j].y,2));
+				if(chkdis < radius){
+					console.log(chkdis);
+					if(active_player === 7){
+						if(!player[j].hold_disc){
+							if(canvas_width > canvas_height){
+								if(player[active_player].y < player[j].y){
+									player[active_player].x = player[j].x;
+									player[active_player].y = player[j].y - 2*radius;
+								}
+								if(player[active_player].y > player[j].y){
+									player[active_player].x = player[j].x;
+									player[active_player].y = player[j].y + 2*radius;
+								}
+							}
+							if(canvas_width < canvas_height){
+								if(player[active_player].x < player[j].x){
+									player[active_player].y = player[j].y;
+									player[active_player].x = player[j].x - 2*radius;
+								}
+								if(player[active_player].x > player[j].x){
+									player[active_player].y = player[j].y;
+									player[active_player].x = player[j].x + 2*radius;
+								}
+							}
+							disc_holder = j;
+							player[j].hold_disc = true;
+						}
+					}
+					else{
+						if(canvas_width > canvas_height){
+							if(player[active_player].y < player[j].y){
+								player[active_player].y = player[j].y - radius;
+							}
+							if(player[active_player].y > player[j].y){
+								player[active_player].y = player[j].y + radius;
+							}
+						}
+						if(canvas_width < canvas_height){
+							if(player[active_player].x < player[j].x){
+								player[active_player].x = player[j].x - radius;
+							}
+							if(player[active_player].x > player[j].x){
+								player[active_player].x = player[j].x + radius;
+							}
+						}
+					}
+				}
+				/*else{
+					if(player[j].hold_disc){
+						if(active_player === 7){
+							if(canvas_width > canvas_height){
+								player[active_player].x = player[disc_holder].x;
+								player[active_player].y = player[disc_holder].y + 2*radius;
+							}
+							if(canvas_width < canvas_height){
+								player[active_player].x = player[disc_holder].x + 2*radius;
+								player[active_player].y = player[disc_holder].y;
+							}
+							player[disc_holder].hold_disc = false;
+						}
+					}
+				}*/
+			}
+			console.log(chkdis+", "+j+", "+player[active_player].x+", "+2*radius+", "+disc_holder+", "+player[j].hold_disc);
+		}
+	}
+
+	///////////////////////////
+	// END OF CLASS "PLAYER" //
+	///////////////////////////
+	
 	</script>
 </head>
-<body onLoad="test(),test2()">
-	<h2>This is a test canvas.</h2>
-	<canvas id="sample" style="background-color:green;" width="600" height="200">
-	図形を表示するには、canvasタグをサポートしたブラウザが必要です。
-	</canvas>
-	<canvas id="sample2" style="border: 5px solid #000;" width="600" height="200">
-	</canvas>
+<body onLoad="main()" onResize="main()" style="text-align: center;">
+<div id="container" style="min-height: 100%; overflow: hidden;">
+	<div id="main" style="height: 100%; overflow: hidden;">
+		<!--<h2>This is a test canvas.</h2>-->
+		<div id="mainmenu" style="text-align: left;">
+			<form style="margin: 10px; float: left;">
+				<input onChange="dragPlayer()" type="checkbox" checked="true"/>Drag Player
+				<input onChange="p_drawLine()" type="checkbox">Drag Player + Draw Line
+				<input onChange="drawLine()" type="checkbox" name="select_line"/>Draw Line
+				<input onChange="eraseLine()" type="checkbox" name="erase_line">Erase Line
+				<br>	
+				<input onClick="resetPosition()" type="button" value="Reset" style="margin-top: 10px;">
+				<input onClick="openMenu()" type="button" value="Menu" style="position: absolute; right: 10px; border: 3px solid #000;">
+		</form>
+		</div>
+		<div id="sidemenu">
+			<form>
+				<input onClick="closeMenu()" type="button" value="Close" style="margin: 20px 10px 10px; border: 3px solid #000;">
+			</form>
+			<br>
+			<h4 style="width: 150px; text-align: center;">Change Formation</h4>
+			<select onChange="changeFormation()" id="formation_select" style="margin: 10px;">
+				<option value="0" selected>STACK</option>
+				<option value="1" >HORIZONTAL</option>
+			</select>
+			<br><br>
+			<h4 style="width: 150px; text-align: center;">Change Line Color</h4> 
+			<select onChange="changeC_W()" id="color_select" style="margin: 10px;">
+				<option value="#000000" style="background-color: #000000; color: #FFF;" selected>BLACK</option>
+				<option value="#FF0000" style="background-color: #FF0000;">RED</option>
+				<option value="#0000FF" style="background-color: #0000FF;">BLUE</option>
+				<option value="#800080" style="background-color: #800080;">PURPLE</option>
+				<option value="#008000" style="background-color: #008000;">GREEN</option>
+			</select>
+			<h4 style="width: 150px; text-align: center;">Change Line Width</h4>
+			<select onChange="changeC_W()" id="width_select" style="margin: 10px;">
+				<option value="1">1px</option>
+				<option value="3">3px</option>
+				<option value="5" selected>5px</option>
+				<option value="7">7px</option>
+				<option value="10">10px</option>
+			</select>
+			<br><br>
+			<a href="planning_board_help.html" target="blank" style="margin: 10px;">HELP</a>
+		</div>
+		<br style="clear: both;">
+		<div id="canvas">
+		<canvas id="sample" style="border: 5px solid #000; border-radius: 5px; box-shadow: 3px 3px 5px gray; margin: 10px auto; z-index: 2; position: absolute; top: 90px; left: 45px;">
+			図形を表示するには、canvasタグをサポートしたブラウザが必要です。
+		</canvas>
+		<canvas id="sample2" style="border: 5px solid #000; border-radius: 5px; box-shadow: 3px 3px 5px gray; margin: 0px auto; z-index: 0; position: absolute; top: 100px; left: 45px;">
+			図形を表示するには、canvasタグをサポートしたブラウザが必要です。
+		</canvas>
+		<canvas id="sample3" style="border: 5px solid #000; border-radius: 5px; box-shadow: 3px 3px 5px gray; margin: 0px auto; z-index: 1; position: absolute; top: 100px; left: 45px;">
+			図形を表示するには、canvasタグをサポートしたブラウザが必要です。
+		</canvas>
+		</div>
+	</div>
+</div>
 </body>
 </html>

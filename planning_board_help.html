@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>Planning Board Help</title>
+</head>
+<body>
+	<div id="main" style="text-align: left; margin: 30px; line-height: 1.5;">
+		<div id="contents" style="background-color: #c0c0c0; padding: 20px;">
+			<h1>コンテンツ</h1>
+			<ol>
+				<li>はじめに</li>
+				<li>注意点</li>
+				<li>使い方</li>
+				<ol type="i">
+					<li>Drag Player</li>
+					<li>Draw Line, Erase Line</li>
+					<li>Drag Player + Draw Line</li>
+					<li>Reset</li>
+					<li>Formation</li>
+					<li>Diskについて</li>
+				</ol>
+			</ol>
+		</div>
+		<br><br>
+		<div id="beginning" style="margin-left: 20px;">
+			<h1>1. はじめに</h1>
+			<p>
+				Planning Boardウェブアプリケーションをご利用ありがとうございます。<br>
+				このアプリケーションは「アルティメット」というスポーツ用の作戦ボードです。<br>
+				このアプリケーションのソースコードの著作権はすべて慶應ホワイトホーンズに属します。<br>
+				また、バグ等を発見した場合は次のメールアドレスまでご連絡ください。<br>
+				kowhitehorns☆gmail.com　(☆を＠にする)
+			</p>
+		</div>
+		<br><br>
+		<div id="warnings" style="margin-left: 20px;">
+			<h1>2. 注意点</h1>
+			<p>
+				Planning Boardウェブアプリケーションをご利用の際に注意して頂きたい点が数点ございます。<br>
+				①このアプリケーションは素人が趣味程度に作ったものです。そのためアプリケーションにバグが存在する可能性がございます。<br>
+				②動作確認済みのブラウザはFirefox、そしてGoogle Chromeのみです。Internet Explorer、Opera、EdgeやSafariにおける動作は保証できません。<br>
+				③このアプリケーションはパソコン、アンドロイド端末、iOS端末のどれでも使用することができます。<br>
+				④このアプリケーションはタブレット端末やタブレット型PC向けに設計したものです。スマートフォンでも使用できるようにしてはありますが、快適に操作することは保証できません。<br>
+				⑤無料のホームページ運営サービスを利用しているため、ページの下に広告が表示されてしまいます。こちら側では対策のしようがございませんのでご了承ください。<br>
+				⑥このアプリケーションはなるべく動作が軽くなるようにコーディングされていますが、古いパソコンや端末などでは動作が滑らかでなくなる可能性がございます。<br>
+			</p>
+		</div>
+		<br><br>
+		<div id="howToUse" style="margin-left: 20px;">
+			<h1>3. 使い方</h1>
+			<ol type="i">
+				<li>
+					<h2>Drag Player</h2>
+					<p>
+						"Drag Player"のチェックボックスをチェックすることで選手を見立てた円を黒枠内で動かすことができます。<br>
+						またディスク（白い円）を持っている選手を動かすとディスクも自動的に動くようになってます。<br>
+						この機能はデフォルトでオンになってます。
+					</p>
+				</li>
+				<li>
+					<h2>Draw Line, Erase Line</h2>
+					<p>
+						"Draw Line"もしくは"Erase Line"のチェックボックスをチェックすることで黒枠内に線を引いたり消したりすることができます。<br>
+						"Draw Line"における描く線の色と太さは"Menu"内の"Change Line Color"もしくは"Change Line Width"にあるプルダウンメニューで選択することができます。
+					</p>
+				</li>
+				<li>
+					<h2>Drag Player + Draw Line</h2>
+					<p>
+						"Drag Player + Draw Line"のチェックボックスをチェックすることで選手を動かしつつ線を引くことができます。<br>
+						ディスクも別の色で線が引かれます。<br>
+						ただし、この時に引く線の色と太さは先ほどの"Draw Line"のように変更することができません。またこの線は"Erase Line"で消すことができません。
+					</p>
+				</li>
+				<li>
+					<h2>Reset</h2>
+					<p>
+						"Reset"ボタンを押すことで今まで動かした選手の位置をデフォルトに戻すことができます。同時に枠内に引いたすべての線を消すことができます。<br>
+						この操作はやり直すことができないので注意してください。
+					</p>
+				</li>
+				<li>
+					<h2>Formation</h2>
+					<p>
+						"Menu"内の"Formation"プルダウンからスタックもしくはホライゾンのフォーメーションを選択することができます。<br>
+						フォーメーションを変更した際は先ほどの"Reset"と同様に選手に位置と引いた線はすべてリセットされるので注意してください。
+					</p>
+				</li>
+				<li>
+					<h2>Diskについて</h2>
+					<p>
+						ディスクは他の円（選手）と少しだけ違う動きを行います。<br>
+						ディスクを渡したい選手の真上までドラッグしてドロップすると自動的にその選手の左右のどちらかに配置されます。
+					</p>
+				</li>
+			</ol>
+		</div>
+	</div>
+</body>
+</html>

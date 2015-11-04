@@ -14,6 +14,9 @@
 	//var drawOK = false;
 	var context = null;
 	var i=0;*/
+
+	var cvs = null;
+	var ctx = null;
 	
 	//booleans for checkboxes (these should not be included in the PLAYER class)
 	var drag_circle = false;
@@ -21,6 +24,8 @@
 
 	//var graphx = new Array;
 	//var graphy = new Array;
+
+	var player = new Array;
 
 	var PLAYER = function(x_init,y_init){
 		// variables
@@ -33,6 +38,8 @@
 		this.canvas = document.getElementById('sample');
 		this.context = this.canvas.getContext("2d");
 		this.i = 0;
+		this.rect;
+		this.distance;
 
 		// booleans
 		this.dragOK = false;
@@ -42,7 +49,7 @@
 		this.graphy = new Array;
 
 		// functions
-		this.drawCircle = function(){
+		/*this.drawCircle = function(){
 			this.context.beginPath();
 			this.context.arc(this.x,this.y,20,0,Math.PI*2,false);
 			this.context.closePath();
@@ -52,16 +59,23 @@
 			this.context.stroke();
 			this.context.fill();
 		}
+		this.show = function(){
+			console.log(this.x+", "+this.x1);
+		}
 		this.hold = function(event){
-			//console.log("dragable");
+			console.log("dragable");
+			console.log(this.x);
 			if(drag_circle){
-				var rect=event.target.getBoundingClientRect();
-				this.x1=event.clientX - rect.left;
-				this.y1=event.clientY - rect.top;
-				var distance = Math.sqrt(Math.pow(this.x1-this.x,2)+Math.pow(this.y1-this.y,2));
-				if(distance < 20){
+				this.rect=event.target.getBoundingClientRect();
+				this.x1=event.clientX - this.rect.left;
+				this.y1=event.clientY - this.rect.top;
+				this.distance = Math.sqrt(Math.pow(this.x1-this.x,2)+Math.pow(this.y1-this.y,2));
+				console.log(this.distance);
+				console.log(this.x);
+				if(this.distance < 20){
 					this.x = event.pageX - this.canvas.offsetLeft;
 					this.y = event.pageY - this.canvas.offsetTop;
+					console.log("drag start");
 					if(draw_line){
 						this.context.beginPath();
 						console.log("draw start");
@@ -69,6 +83,7 @@
 					this.dragOK = true;
 					this.canvas.onmousemove = this.drag;
 				}
+				console.log(this.x1);
 			}
 		}
 		this.drag = function(event){
@@ -84,11 +99,81 @@
 			}
 		}
 		this.drop = function(event){
-			console.log("draw end");
+			console.log("end");
 			this.dragOK = false;	
 			this.canvas.onmousemove = null;
+		}*/
+
+		return this;
+	}
+	PLAYER.prototype.drawCircle = function(){
+		this.context.beginPath();
+		this.context.arc(this.x,this.y,20,0,Math.PI*2,false);
+		this.context.closePath();
+		this.context.strokeStyle = "#000";
+		this.context.fillStyle = "red";
+		this.context.lineWidth = 5;
+		this.context.stroke();
+		this.context.fill();
+	}
+	PLAYER.prototype.show = function(){
+		console.log(this.x+", "+this.x1);
+	}
+	PLAYER.prototype.hold = function(event){
+		console.log("dragable");
+		console.log(this.x);
+		if(drag_circle){
+			this.rect=event.target.getBoundingClientRect();
+			this.x1=event.clientX - this.rect.left;
+			this.y1=event.clientY - this.rect.top;
+			this.distance = Math.sqrt(Math.pow(this.x1-this.x,2)+Math.pow(this.y1-this.y,2));
+			console.log(this.distance);
+			console.log(this.x1);
+			if(this.distance < 20){
+				this.x = event.pageX - this.canvas.offsetLeft;
+				this.y = event.pageY - this.canvas.offsetTop;
+				console.log("drag start");
+				if(draw_line){
+					this.context.beginPath();
+					console.log("draw start");
+				}
+				this.dragOK = true;
+				this.canvas.addEventListener("mousemove",this.drag,false);
+				this.canvas.removeEventListener("mouseup",this.drop,false);
+				//this.canvas.onmousemove = this.drag;
+			}
+			/*else{
+				this.canvas.removeEventListener("mousedown",this.hold,false);
+				this.canvas.removeEventListener("mousemove",this.drag,false);
+				this.canvas.removeEventListener("mouseup",this.drop,false);
+			}*/
+			console.log(this.x);
 		}
 	}
+	PLAYER.prototype.drag = function(event){
+		if(this.dragOK){
+			this.x = event.pageX - this.canvas.offsetLeft;
+			this.y = event.pageY - this.canvas.offsetTop;
+			if(draw_line){
+				this.graphx[i]=this.x;
+				this.graphy[i]=this.y;
+				this.i++;
+			}
+			this.canvas.removeEventListener("mousedown",this.hold,false);
+			this.canvas.addEventListener("mouseup",this.drop,false);
+			//this.canvas.onmouseup = this.drop;
+		}
+	}
+	PLAYER.prototype.drop = function(event){
+		console.log("end");
+		this.dragOK = false;	
+		this.canvas.removeEventListener("mousedown",this.hold,false);
+		this.canvas.removeEventListener("mousemove",this.drag,false);
+		this.canvas.removeEventListener("mouseup",this.drop,false);
+		//this.canvas.onmousemove = null;
+	}
+
+
 	// END OF CLASS "PLAYER" //
 
 	/*function drawCircle(x,y){
@@ -102,7 +187,7 @@
 		context.fill();
 	}*/
 	function draw(){
-		player[k].context.clearRect(0,0,800,200);
+		ctx.clearRect(0,0,800,200);
 		
 		for(var k=0; k<7; k++){
 			for(var j=0; j<player[k].graphx.length-1; j++){
@@ -114,7 +199,7 @@
 				player[k].context.stroke();
 			}
 	
-			player[k].drawCircle(x,y);
+			player[k].drawCircle(player[k].x,player[k].y);
 		}
 	}
 	function test(){
@@ -167,31 +252,25 @@
 			init();
 			canvas.onmousedown = hold;
 		}*/
-		var player1 = new PLAYER(1*100+20,100);
-		var player2 = new PLAYER(2*100+20,100);
-		var player3 = new PLAYER(3*100+20,100);
-		var player4 = new PLAYER(4*100+20,100);
-		var player5 = new PLAYER(5*100+20,100);
-		var player6 = new PLAYER(6*100+20,100);
-		var player7 = new PLAYER(7*100+20,100);
-
+		for(var j=0; j<7; j++){
+			player[j] = new PLAYER((j+1)*100,100);
+		}
+		
 		function init(){
-				//canvas = document.getElementById('sample');
-				//context = canvas.getContext("2d");	
+				cvs = document.getElementById('sample');
+				ctx = cvs.getContext("2d");	
 				return setInterval(draw,10);
 		}
 
 		
 		init();
-		player1.canvas.onmousedown = player1.hold;
-		player2.canvas.onmousedown = player2.hold;
-		player3.canvas.onmousedown = player3.hold;
-		player4.canvas.onmousedown = player4.hold;
-		player5.canvas.onmousedown = player5.hold;
-		player6.canvas.onmousedown = player6.hold;
-		player7.canvas.onmousedown = player7.hold;
-
-	
+		for(var j=0; j<7; j++){
+			player[j].show();
+			//console.log(player[j].x);
+			//player[j].canvas.onmousedown = player[j].hold();		
+			player[j].canvas.addEventListener("mousedown",player[j].hold,false);
+		}
+		
 	}
 	function dragPlayer(){
 		drag_circle = document.forms[0].elements[0].checked;

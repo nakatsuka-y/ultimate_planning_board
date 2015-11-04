@@ -6,17 +6,28 @@
 	<title>Draw Lines</title>
 	<script type="text/javascript">
 	//成功バージョン！！
-	// this version is for drawing lines while using the "setInterval" function.
-	// this version is also for experimenting all sorts of ways of "drawing" lines.
-	// this version have succeeded to draw remembered lines.
-	// this version have also succeeded to draw remembered lines in their color and width, and also succeeded to draw seperated lines all in once.
-	// this version have also succeeded to undo and redo drawing lines. (ISSUE: you can't undo lines when you draw lines after undoing lines)
+	// 2015/09/24:  this version aims to draw lines using a Line Class.
+	// 		this version has succeeded to draw lines using a Line Class
+	// 		this version has also succeeded to create two canvases, stacking them on top of one another, and drawing lines in one of them.
 
+	// BEGINNING OF "LINE" CLASS //
+
+	function LINE(){
+		// variables
+		this.color = "#000";
+		this.width = 5;
+		this.draw_i = 0;
+
+		// arrays
+		this.graphx = new Array;
+		this.graphy = new Array;
+
+		return this;
+	}
+	
+	// END OF "LINE" CLASS //
+	
 	//global variables
-	var color = new Array;
-	var width = new Array;
-	var graphx = new Array;
-	var graphy = new Array;
 	var draw_count = new Array;
 	var buff = new Array;
 
@@ -28,39 +39,32 @@
 	var canvas_width = 0;
 	var canvas_height = 0;
 	var drawID = -1;
-	var draw_i=0;
 	var color_count = 0;
 	var width_count = 0;
 	var c_and_w_count = 0;
 	var count_count = 0;
 	var undo_count = 0;
+	var class_count = 0;
 	
-	color[0] = "#000";
-	width[0] = 5;
 	draw_count[0] = 0;
 
-	/*function drawLine(x1,y1,x2,y2){
-		context.lineWidth = 5;
-		context.strokeStyle = "red";
-		context.lineCap = "round";
-		context.moveTo(x1,y1);
-		//context.beginPath();
-		context.lineTo(x2,y2);
-		context.stroke();
-	}*/
+	// instance for LINE class
+	var line = new Array;
+
+	
 	function draw(){
 		context.clearRect(0,0,canvas_width,canvas_height);
 		//drawRemLine();
-		for(var k=0; k<draw_count.length-1; k++){
+		for(var k=0; k<line.length; k++){
 			//console.log("k= "+k);	
 			context.beginPath();
 			//console.log("in2");
-			for(var j=draw_count[k]; j<draw_count[k+1]-1; j++){
-				context.lineWidth = width[k];
-				context.strokeStyle = color[k];
+			for(var j=0; j<line[k].draw_i-1; j++){
+				context.lineWidth = line[k].width;
+				context.strokeStyle = line[k].color;
 				context.lineCap = "round";
-				context.moveTo(graphx[j],graphy[j]);
-				context.lineTo(graphx[j+1],graphy[j+1]);
+				context.moveTo(line[k].graphx[j],line[k].graphy[j]);
+				context.lineTo(line[k].graphx[j+1],line[k].graphy[j+1]);
 				context.stroke();
 				//console.log(graphx[j]);
 			}
@@ -69,15 +73,24 @@
 	}
 	function test(){
 		canvas = document.getElementById('sample');
+		canvas2 = document.getElementById('sample2');
 		canvas_width = window.innerWidth-100;
 		canvas_height = window.innerHeight-150;
-		document.getElementById('sample').width = canvas_width;
-		document.getElementById('sample').height = canvas_height;
+		canvas.width = canvas_width;
+		canvas.height = canvas_height;
+		canvas2.width = canvas_width;
+		canvas2.height = canvas_height;
+		//canvas2.style.top = "105px";
+		//canvas2.style.left = "45px";
+		//canvas2.style.transform = "translate3d("+-1*(canvas_width+20)+"px,10px,0px)";
+
 		//draw_line = document.forms[0].elements[0].checked;
 		var x1=y1=x2=y2=0;
 		//drawID = setInterval(draw,10);
 		if (canvas.getContext){
 			context = canvas.getContext("2d");
+			context2 = canvas2.getContext("2d");
+			//context2.globalAlpha = 1;
 			console.log(draw_line);
 			/*function init(){
 				canvas = document.getElementById('sample');
@@ -85,37 +98,51 @@
 				return setInterval(draw,100);
 			}*/
 			
+
+			context.beginPath();
+			context.arc(100,100,20,0,Math.PI*2,false);
+			context.closePath();
+			context.strokeStyle = "#000";
+			context.fillStyle = "red";
+			context.lineWidth = 5;
+			context.stroke();
+			context.fill();
+
 			function startPoint(event){
 				//listen for the mouse to be moved
 				if(draw_line){
 					/*var rect=event.target.getBoundingClientRect();
 					x1=event.clientX - rect.left;
 					y1=event.clientY - rect.top;*/
+					
+					line[class_count] = new LINE();	
+
 					if(touchable){
-						x1 = event.touches[0].pageX - canvas.offsetLeft;
-						y1 = event.touches[0].pageY - canvas.offsetTop;
+						x1 = event.touches[0].pageX - canvas2.offsetLeft;
+						y1 = event.touches[0].pageY - canvas2.offsetTop;
 					}
 					else{
-						x1 = event.pageX - canvas.offsetLeft;
-						y1 = event.pageY - canvas.offsetTop;
+						x1 = event.pageX - canvas2.offsetLeft;
+						y1 = event.pageY - canvas2.offsetTop;
 					}
 					
 					var color_name = document.getElementById("color_select");
 					var width_name = document.getElementById("width_select");
-					color[c_and_w_count] = color_name.value;
-					width[c_and_w_count] = width_name.value;
+					line[class_count].color = color_name.value;
+					line[class_count].width = width_name.value;
+					
 					//c_and_w_count++;
 
 					//move starting point to the current mouse cursole
-					context.beginPath();
+					context2.beginPath();
 					
 					
 					drawOK = true;
 					if(touchable){
-						canvas.ontouchmove = movePoint;	
+						canvas2.ontouchmove = movePoint;	
 					}
 					else{
-						canvas.onmousemove = movePoint;
+						canvas2.onmousemove = movePoint;
 					}
 					console.log("begin");
 				}
@@ -126,45 +153,46 @@
 					x2=event.clientX - rect.left;
 					y2=event.clientY - rect.top;*/
 					if(touchable){
-						x2 = event.touches[0].pageX - canvas.offsetLeft;
-						y2 = event.touches[0].pageY - canvas.offsetTop;
+						x2 = event.touches[0].pageX - canvas2.offsetLeft;
+						y2 = event.touches[0].pageY - canvas2.offsetTop;
 					}
 					else{
-						x2 = event.pageX - canvas.offsetLeft;
-						y2 = event.pageY - canvas.offsetTop;
+						x2 = event.pageX - canvas2.offsetLeft;
+						y2 = event.pageY - canvas2.offsetTop;
 					}
 					
 					//draw line from previous mouse point (x1,y1) to current mouse point (x2,y2)
-					context.lineWidth = width[c_and_w_count];
-					context.strokeStyle = color[c_and_w_count];
-					context.moveTo(x1,y1);
-					context.lineTo(x2,y2);
-					context.lineCap="round";
-					context.stroke();
+					context2.lineWidth = line[class_count].width;
+					context2.strokeStyle = line[class_count].color;
+					context2.moveTo(x1,y1);
+					context2.lineTo(x2,y2);
+					context2.lineCap="round";
+					context2.stroke();
 					
 					//plug in (x2,y2) into (x1,y1)
 					x1=x2;
 					y1=y2;
 
-					graphx[draw_i]=x2;
-					graphy[draw_i]=y2;
-					draw_i++;
+					line[class_count].graphx[line[class_count].draw_i]=x2;
+					line[class_count].graphy[line[class_count].draw_i]=y2;
+					line[class_count].draw_i++;
 					
 					//clearInterval(drawID);
 					if(touchable){
-						canvas.ontouchend = endPoint;	
+						canvas2.ontouchend = endPoint;	
 					}
 					else{
-						canvas.onmouseup = endPoint;
+						canvas2.onmouseup = endPoint;
 					}
 				}
 			}
 			function endPoint(event){
-				context.closePath();
+				context2.closePath();
+				class_count++;
 				c_and_w_count++;
 				
 				drawOK = false;
-				canvas.onmousemove = null;
+				canvas2.onmousemove = null;
 				//clearInterval(drawID);
 				/*for(var j=0; j<graphx.length-1; j++){
 					drawLine(graphx[j],graphy[j],graphx[j+1],graphy[j+1]);		
@@ -173,7 +201,7 @@
 				console.log("continue");
 
 				count_count++;
-				draw_count[count_count] = draw_i;	
+				//draw_count[count_count] = draw_i;	
 
 				//drawRemLine();
 			}
@@ -182,14 +210,19 @@
 			//init();
 			if("ontouchstart" in window){
 				touchable = true;
-				canvas.ontouchstart = startPoint;	
+				canvas2.ontouchstart = startPoint;	
 			}
 			else{
 				touchable = false;
-				canvas.onmousedown = startPoint;
+				canvas2.onmousedown = startPoint;
 			}
 			
-			drawID = setInterval(draw,200);
+			//drawID = setInterval(draw,200);
+			function loop(){
+				//draw();
+				window.requestAnimationFrame(loop);
+			}
+			loop();
 		}	
 	}
 	function drawLine(){
@@ -238,6 +271,12 @@
 			alert("You can't redo anymore");
 		}
 	}
+	/*function changeC_W(){
+		var color_name = document.getElementById("color_select");
+		var width_name = document.getElementById("width_select");
+		line[class_count].width = color_name.value;
+		line[class_count].color = width_name.value;
+	}*/
 	
 	</script>
 </head>
@@ -268,6 +307,9 @@
 	</form>
 	<br style="clear: both;">
 	<canvas id="sample" style="border: 5px solid #000; margin: 10px;">
+		図形を表示するには、canvasタグをサポートしたブラウザが必要です。
+	</canvas>
+	<canvas id="sample2" style="border: 5px solid #000; z-index: 1; position: absolute; top: 105px; left: 45px;">
 		図形を表示するには、canvasタグをサポートしたブラウザが必要です。
 	</canvas>
 </body>
